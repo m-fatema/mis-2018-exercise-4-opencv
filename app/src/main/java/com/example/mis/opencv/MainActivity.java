@@ -54,21 +54,19 @@ public class MainActivity extends Activity implements CvCameraViewListener2 {
                 {
                     Log.i(TAG, "OpenCV loaded successfully");
                     String filePath = initAssetFile("haarcascade_frontalface_alt2.xml");
+                    mOpenCvCameraView.enableView();
 
-                    try{
-                    mFaceDetector = new CascadeClassifier( filePath );}
-                    catch( Exception e){
-                        Log.d(TAG, "Exception: " + e.getMessage() + "\n" + e.getCause());
-                    }
+                    mFaceDetector = new CascadeClassifier( filePath );
+
                     Log.d("@@@@@mFaceDetector: " , String.valueOf(mFaceDetector));
-                    /*if( mFaceDetector.empty() ){
+                    if( mFaceDetector.empty() ){
                         Log.d(TAG, "Failed to load cascade classifier");
                         mFaceDetector = null;
                     }
                     else{
                         Log.d(TAG, "Loaded face detector classifier: " + filePath );
-                    }*/
-                    mOpenCvCameraView.enableView();
+                    }
+
                 } break;
                 default:
                 {
@@ -151,6 +149,7 @@ public class MainActivity extends Activity implements CvCameraViewListener2 {
         //Imgproc.cvtColor(tmp, col, Imgproc.COLOR_GRAY2RGBA, 4);
         Core.flip(col, col, 1);
         //*********************************************************************************
+        //http://romanhosek.cz/android-eye-detection-updated-for-opencv-2-4-6/
         if (mAbsoluteFaceSize == 0) {
             int height = gray.rows();
             if (Math.round(height * mRelativeFaceSize) > 0) {
