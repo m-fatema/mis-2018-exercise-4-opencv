@@ -42,8 +42,8 @@ public class MainActivity extends Activity implements CvCameraViewListener2 {
     double xCenter = -1;
     double yCenter = -1;
     Mat gray,col;
-    private boolean              mIsJavaCamera = true;
-    private MenuItem             mItemSwitchCamera = null;
+    //private boolean              mIsJavaCamera = true;
+    //private MenuItem             mItemSwitchCamera = null;
 
 
     private BaseLoaderCallback mLoaderCallback = new BaseLoaderCallback(this) {
@@ -53,18 +53,19 @@ public class MainActivity extends Activity implements CvCameraViewListener2 {
                 case LoaderCallbackInterface.SUCCESS:
                 {
                     Log.i(TAG, "OpenCV loaded successfully");
-                    String filePath = initAssetFile("haarcascade_frontalface_alt2.xml");
+                    String filePath = initAssetFile("haarcascade_frontalface_default.xml");
                     mOpenCvCameraView.enableView();
-
+                    Log.d(TAG, "#####Loaded face detector classifier: " + filePath );
                     mFaceDetector = new CascadeClassifier( filePath );
-
+                    Log.d("@@@@@Check is Empty: " , String.valueOf(mFaceDetector.empty()));
+                    //mFaceDetector.load(filePath);
                     Log.d("@@@@@mFaceDetector: " , String.valueOf(mFaceDetector));
                     if( mFaceDetector.empty() ){
                         Log.d(TAG, "Failed to load cascade classifier");
                         mFaceDetector = null;
                     }
                     else{
-                        Log.d(TAG, "Loaded face detector classifier: " + filePath );
+                        Log.d(TAG, "*****Loaded face detector classifier: " + filePath );
                     }
 
                 } break;
@@ -146,10 +147,12 @@ public class MainActivity extends Activity implements CvCameraViewListener2 {
 
         Mat tmp = gray.clone();
         //Imgproc.Canny(gray, tmp, 80, 100);
-        //Imgproc.cvtColor(tmp, col, Imgproc.COLOR_GRAY2RGBA, 4);
+        Imgproc.cvtColor(tmp, col, Imgproc.COLOR_GRAY2RGBA, 4);
         Core.flip(col, col, 1);
-        //*********************************************************************************
-        //http://romanhosek.cz/android-eye-detection-updated-for-opencv-2-4-6/
+        /*
+        *********************************************************************************
+        http://romanhosek.cz/android-eye-detection-updated-for-opencv-2-4-6/
+        */
         if (mAbsoluteFaceSize == 0) {
             int height = gray.rows();
             if (Math.round(height * mRelativeFaceSize) > 0) {
@@ -164,12 +167,12 @@ public class MainActivity extends Activity implements CvCameraViewListener2 {
                     new Size(mAbsoluteFaceSize, mAbsoluteFaceSize),
                     new Size());
 
-        Rect[] facesArray = faces.toArray();
-        for (int i = 0; i < facesArray.length; i++) {
-            Imgproc.rectangle(col, facesArray[i].tl(), facesArray[i].br(),
+        Rect[] faceArray = faces.toArray();
+        for (int i = 0; i < faceArray.length; i++) {
+            Imgproc.rectangle(col, faceArray[i].tl(), faceArray[i].br(),
                     new Scalar(0, 255, 0, 255), 3);
-            xCenter = (facesArray[i].x + facesArray[i].width + facesArray[i].x) / 2;
-            yCenter = (facesArray[i].y + facesArray[i].y + facesArray[i].height) / 2;
+            xCenter = (faceArray[i].x + faceArray[i].width + faceArray[i].x) / 2;
+            yCenter = (faceArray[i].y + faceArray[i].y + faceArray[i].height) / 2;
             Point center = new Point(xCenter, yCenter);
 
             Imgproc.circle(col, center, 10, new Scalar(255, 0, 0, 255), 3);
@@ -179,7 +182,7 @@ public class MainActivity extends Activity implements CvCameraViewListener2 {
                     Core.FONT_HERSHEY_SIMPLEX, 0.7, new Scalar(255, 255, 255,
                             255));
 
-            Rect r = facesArray[i];
+            //Rect r = facesArray[i];
         }
         //*********************************************************************************
 
@@ -193,7 +196,12 @@ public class MainActivity extends Activity implements CvCameraViewListener2 {
             InputStream is = getAssets().open(filename);
             OutputStream os = new FileOutputStream(file);
             byte[] data = new byte[is.available()];
-            is.read(data); os.write(data); is.close(); os.close();
+            /*int cnt;
+            while ((cnt = is.read(data)) != -1) {
+                os.write(data, 0, cnt);
+            }*/
+            is.read(data); os.write(data);
+            is.close(); os.close();
         } catch (IOException e) { e.printStackTrace();
         Log.d(TAG,"prepared local file ERROR: "+e.getMessage()); }
         Log.d(TAG,"prepared local file: "+file.getAbsolutePath());
