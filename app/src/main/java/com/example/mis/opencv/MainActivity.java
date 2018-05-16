@@ -141,7 +141,7 @@ public class MainActivity extends Activity implements CvCameraViewListener2 {
         Imgproc.rectangle(col, foo.tl(), foo.br(), new Scalar(0, 0, 255), 3);
         return col;
         */
-
+        int height;
         gray = inputFrame.gray();
         col  = inputFrame.rgba();
 
@@ -153,8 +153,8 @@ public class MainActivity extends Activity implements CvCameraViewListener2 {
         *********************************************************************************
         http://romanhosek.cz/android-eye-detection-updated-for-opencv-2-4-6/
         */
+        height = gray.rows();
         if (mAbsoluteFaceSize == 0) {
-            int height = gray.rows();
             if (Math.round(height * mRelativeFaceSize) > 0) {
                 mAbsoluteFaceSize = Math.round(height * mRelativeFaceSize);
             }
@@ -162,25 +162,27 @@ public class MainActivity extends Activity implements CvCameraViewListener2 {
         MatOfRect faces = new MatOfRect();
 
         if (mFaceDetector != null)
-            mFaceDetector.detectMultiScale(gray, faces, 1.1, 2,
+            mFaceDetector.detectMultiScale(gray, faces, 1.1, 3,
                     2,
                     new Size(mAbsoluteFaceSize, mAbsoluteFaceSize),
-                    new Size());
+                    new Size()); //minNeighbours = accuracy = minimum for deciding threshold
 
         Rect[] faceArray = faces.toArray();
         for (int i = 0; i < faceArray.length; i++) {
-            Imgproc.rectangle(col, faceArray[i].tl(), faceArray[i].br(),
-                    new Scalar(0, 255, 0, 255), 3);
+            Imgproc.rectangle(col, faceArray[i].tl(), faceArray[i].br(),new Scalar(0, 0, 255, 0), 4);
             xCenter = (faceArray[i].x + faceArray[i].width + faceArray[i].x) / 2;
             yCenter = (faceArray[i].y + faceArray[i].y + faceArray[i].height) / 2;
             Point center = new Point(xCenter, yCenter);
+            Log.d(TAG, "faceArray[i].height: " + String.valueOf(faceArray[i].height));
+            Log.d(TAG, "height: " + String.valueOf(height));
+            int radius = (faceArray[i].width/ height)*500;
+            Log.d(TAG, "Radius: " + String.valueOf(radius));
+            Imgproc.circle(col, center, radius, new Scalar(255, 0, 0, 255), 100);
 
-            Imgproc.circle(col, center, 10, new Scalar(255, 0, 0, 255), 3);
-
-            Imgproc.putText(col, "[" + center.x + "," + center.y + "]",
+            /*Imgproc.putText(col, "[" + center.x + "," + center.y + "]",
                     new Point(center.x + 20, center.y + 20),
                     Core.FONT_HERSHEY_SIMPLEX, 0.7, new Scalar(255, 255, 255,
-                            255));
+                            255));*/
 
             //Rect r = facesArray[i];
         }
