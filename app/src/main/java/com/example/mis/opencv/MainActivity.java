@@ -1,5 +1,9 @@
-package com.example.mis.opencv;
+/*
+    @Purpose:  To detect nose and indicate it with the help of classifier
+    @Created Date: 15 May, 2018
+ */
 
+package com.example.mis.opencv;
 
 import org.opencv.android.BaseLoaderCallback;
 import org.opencv.android.CameraBridgeViewBase.CvCameraViewFrame;
@@ -36,14 +40,10 @@ public class MainActivity extends Activity implements CvCameraViewListener2 {
     private static final String TAG = "OCVSample::Activity";
 
     private CameraBridgeViewBase mOpenCvCameraView;
-    private CascadeClassifier mFaceDetector;
+    private CascadeClassifier mFaceDetector, mNoseDetector;
     private int mAbsoluteFaceSize = 0;
     private float mRelativeFaceSize = 0.2f;
-    double xCenter = -1;
-    double yCenter = -1;
     Mat gray,col;
-    //private boolean              mIsJavaCamera = true;
-    //private MenuItem             mItemSwitchCamera = null;
 
 
     private BaseLoaderCallback mLoaderCallback = new BaseLoaderCallback(this) {
@@ -52,22 +52,21 @@ public class MainActivity extends Activity implements CvCameraViewListener2 {
             switch (status) {
                 case LoaderCallbackInterface.SUCCESS:
                 {
-                    Log.i(TAG, "OpenCV loaded successfully");
                     String filePath = initAssetFile("haarcascade_frontalface_default.xml");
                     mOpenCvCameraView.enableView();
-                    Log.d(TAG, "#####Loaded face detector classifier: " + filePath );
                     mFaceDetector = new CascadeClassifier( filePath );
-                    Log.d("@@@@@Check is Empty: " , String.valueOf(mFaceDetector.empty()));
-                    //mFaceDetector.load(filePath);
-                    Log.d("@@@@@mFaceDetector: " , String.valueOf(mFaceDetector));
                     if( mFaceDetector.empty() ){
-                        Log.d(TAG, "Failed to load cascade classifier");
+                        Log.d(TAG, "Failed to load face cascade classifier");
                         mFaceDetector = null;
                     }
                     else{
-                        Log.d(TAG, "*****Loaded face detector classifier: " + filePath );
+                        String noseFilePath = initAssetFile("haarcascade_nose.xml");
+                        mNoseDetector = new CascadeClassifier( noseFilePath );
+                        if( mNoseDetector.empty() ){
+                            Log.d(TAG, "Failed to load nose cascade classifier");
+                            mNoseDetector = null;
+                        }
                     }
-
                 } break;
                 default:
                 {
@@ -134,21 +133,14 @@ public class MainActivity extends Activity implements CvCameraViewListener2 {
 
     public Mat onCameraFrame(CvCameraViewFrame inputFrame) {
 
-        //return inputFrame.rgba();
-        /*
-        Mat col  = inputFrame.rgba();
-        Rect foo = new Rect(new Point(100,100), new Point(200,200));
-        Imgproc.rectangle(col, foo.tl(), foo.br(), new Scalar(0, 0, 255), 3);
-        return col;
-        */
         int height;
         gray = inputFrame.gray();
         col  = inputFrame.rgba();
 
         Mat tmp = gray.clone();
         //Imgproc.Canny(gray, tmp, 80, 100);
-        Imgproc.cvtColor(tmp, col, Imgproc.COLOR_GRAY2RGBA, 4);
-        Core.flip(col, col, 1);
+        //Imgproc.cvtColor(tmp, col, Imgproc.COLOR_GRAY2RGBA, 4);
+        //Core.flip(col, col, 1);
         /*
         *********************************************************************************
         http://romanhosek.cz/android-eye-detection-updated-for-opencv-2-4-6/
@@ -160,34 +152,53 @@ public class MainActivity extends Activity implements CvCameraViewListener2 {
             }
         }
         MatOfRect faces = new MatOfRect();
+        MatOfRect nose = new MatOfRect();
 
         if (mFaceDetector != null)
-            mFaceDetector.detectMultiScale(gray, faces, 1.1, 3,
+            mFaceDetector.detectMultiScale(gray, faces, 1.1, 2,
                     2,
                     new Size(mAbsoluteFaceSize, mAbsoluteFaceSize),
                     new Size()); //minNeighbours = accuracy = minimum for deciding threshold
 
         Rect[] faceArray = faces.toArray();
-        for (int i = 0; i < faceArray.length; i++) {
-            Imgproc.rectangle(col, faceArray[i].tl(), faceArray[i].br(),new Scalar(0, 0, 255, 0), 4);
-            xCenter = (faceArray[i].x + faceArray[i].width + faceArray[i].x) / 2;
-            yCenter = (faceArray[i].y + faceArray[i].y + faceArray[i].height) / 2;
-            Point center = new Point(xCenter, yCenter);
-            Log.d(TAG, "faceArray[i].height: " + String.valueOf(faceArray[i].height));
-            Log.d(TAG, "height: " + String.valueOf(height));
-            int radius = (faceArray[i].width/ height)*500;
-            Log.d(TAG, "Radius: " + String.valueOf(radius));
-            Imgproc.circle(col, center, radius, new Scalar(255, 0, 0, 255), 100);
 
-            /*Imgproc.putText(col, "[" + center.x + "," + center.y + "]",
-                    new Point(center.x + 20, center.y + 20),
-                    Core.FONT_HERSHEY_SIMPLEX, 0.7, new Scalar(255, 255, 255,
-                            255));*/
+        for (Rect face : faceArray) {
+            Imgproc.rectangle(col, face.tl(), face.br(),new Scalar(0, 0, 255, 0), 4);
+            Rect faceRect = new Rect((int) face.tl().x, (int) (face.tl().y), face.width, (face.height));
+            Mat faceGray = gray.submat(faceRect);
+            Mat faceRgb = col.submat(faceRect);
 
-            //Rect r = facesArray[i];
+            //https://hackprojects.wordpress.com/tutorials/opencv-python-tutorials/opencv-nose-detection-using-haar-cascades/
+            mNoseDetector.detectMultiScale(faceGray, nose, 1.1, 2, 2,
+                    new Size(mAbsoluteFaceSize, mAbsoluteFaceSize), new Size());
+
+            Rect[] nosesArray = nose.toArray();
+            for (Rect n : nosesArray) {
+
+                //Point center = new Point(n.width , n.height );
+                Point center = new Point(n.x + n.width * 0.5 , n.y + n.height *0.36 );
+
+                //Radius set with trial & test method
+                int radius = (int) (n.width * 0.25);
+                Imgproc.circle(faceRgb, center, radius, new Scalar(255, 0, 0, 255), -1);
+            }
         }
-        //*********************************************************************************
 
+
+
+//        for (int i = 0; i < faceArray.length; i++) {
+//            Imgproc.rectangle(col, faceArray[i].tl(), faceArray[i].br(),new Scalar(0, 0, 255, 0), 4);
+//
+//            xCenter = (faceArray[i].x + faceArray[i].x + faceArray[i].width) / 2;
+//            yCenter = (faceArray[i].y + faceArray[i].y + faceArray[i].height) / 2;
+//
+//            Point center = new Point(xCenter, yCenter);
+//            int radius = 10;//(int)(faceArray[i].height / 10 );
+//            Log.d(TAG, "Radius[" + String.valueOf(i) + "]" +  String.valueOf(radius));
+//            Imgproc.circle(col, center, radius, new Scalar(255, 0, 0, 255), -1);
+//        }
+
+        //*********************************************************************************
         return col;
     }
 
@@ -198,14 +209,10 @@ public class MainActivity extends Activity implements CvCameraViewListener2 {
             InputStream is = getAssets().open(filename);
             OutputStream os = new FileOutputStream(file);
             byte[] data = new byte[is.available()];
-            /*int cnt;
-            while ((cnt = is.read(data)) != -1) {
-                os.write(data, 0, cnt);
-            }*/
             is.read(data); os.write(data);
             is.close(); os.close();
-        } catch (IOException e) { e.printStackTrace();
-        Log.d(TAG,"prepared local file ERROR: "+e.getMessage()); }
+        } catch (IOException e){e.printStackTrace();Log.d(TAG,"prepared local file ERROR: "+e.getMessage());}
+
         Log.d(TAG,"prepared local file: "+file.getAbsolutePath());
         return file.getPath();
     }
