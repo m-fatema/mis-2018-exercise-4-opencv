@@ -2,6 +2,9 @@
 
 We have use haarcascade classifier to detect frontal_face & nose.
 
-The nose setector width,height returns a point on nose. By trial & testing we detected the tip of the nose from pints in the nose detector
+The nose detector returns a set of points in the form of rectangle around the nose of the person looking in the camera.
+From these set of points we compute the point near the nose tip, which is the center of the circle.
 
-*Note: This app only works in landscape mode. But, if we rotate it by 180 degree we are, not able to detect the nose
+We have calculated the radius of the circle depending upon the widht of the nose rectangle returned by the nose detector. 
+
+By testing with differnt devices & different face size we have multiplied the nose width by 0.25 and set this as radius of the circle.
