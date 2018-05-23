@@ -45,7 +45,7 @@ public class MainActivity extends Activity implements CvCameraViewListener2 {
     private float mRelativeFaceSize = 0.2f;
     Mat gray,col;
 
-
+    //Function called afer openCv library is loaded sucessfully
     private BaseLoaderCallback mLoaderCallback = new BaseLoaderCallback(this) {
         @Override
         public void onManagerConnected(int status) {
@@ -138,9 +138,6 @@ public class MainActivity extends Activity implements CvCameraViewListener2 {
         col  = inputFrame.rgba();
 
         Mat tmp = gray.clone();
-        //Imgproc.Canny(gray, tmp, 80, 100);
-        //Imgproc.cvtColor(tmp, col, Imgproc.COLOR_GRAY2RGBA, 4);
-        //Core.flip(col, col, 1);
         /*
         *********************************************************************************
         http://romanhosek.cz/android-eye-detection-updated-for-opencv-2-4-6/
@@ -152,7 +149,7 @@ public class MainActivity extends Activity implements CvCameraViewListener2 {
             }
         }
         MatOfRect faces = new MatOfRect();
-        MatOfRect nose = new MatOfRect();
+
 
         if (mFaceDetector != null)
             mFaceDetector.detectMultiScale(gray, faces, 1.1, 2,
@@ -161,42 +158,44 @@ public class MainActivity extends Activity implements CvCameraViewListener2 {
                     new Size()); //minNeighbours = accuracy = minimum for deciding threshold
 
         Rect[] faceArray = faces.toArray();
-
-        for (Rect face : faceArray) {
-            Imgproc.rectangle(col, face.tl(), face.br(),new Scalar(0, 0, 255, 0), 4);
-            Rect faceRect = new Rect((int) face.tl().x, (int) (face.tl().y), face.width, (face.height));
-            Mat faceGray = gray.submat(faceRect);
-            Mat faceRgb = col.submat(faceRect);
-
-            //https://hackprojects.wordpress.com/tutorials/opencv-python-tutorials/opencv-nose-detection-using-haar-cascades/
-            mNoseDetector.detectMultiScale(faceGray, nose, 1.1, 2, 2,
-                    new Size(mAbsoluteFaceSize, mAbsoluteFaceSize), new Size());
-
-            Rect[] nosesArray = nose.toArray();
-            for (Rect n : nosesArray) {
-
-                //Point center = new Point(n.width , n.height );
-                Point center = new Point(n.x + n.width * 0.5 , n.y + n.height *0.36 );
-
-                //Radius set with trial & test method
-                int radius = (int) (n.width * 0.25);
-                Imgproc.circle(faceRgb, center, radius, new Scalar(255, 0, 0, 255), -1);
-            }
-        }
-
-
-
-//        for (int i = 0; i < faceArray.length; i++) {
-//            Imgproc.rectangle(col, faceArray[i].tl(), faceArray[i].br(),new Scalar(0, 0, 255, 0), 4);
+//        MatOfRect nose = new MatOfRect();
 //
-//            xCenter = (faceArray[i].x + faceArray[i].x + faceArray[i].width) / 2;
-//            yCenter = (faceArray[i].y + faceArray[i].y + faceArray[i].height) / 2;
+//        for (Rect face : faceArray) {
+//            Imgproc.rectangle(col, face.tl(), face.br(),new Scalar(0, 0, 255, 0), 4);
+//            Rect faceRect = new Rect((int) face.tl().x, (int) (face.tl().y), face.width, (face.height));
+//            Mat faceGray = gray.submat(faceRect);
+//            Mat faceRgb = col.submat(faceRect);
 //
-//            Point center = new Point(xCenter, yCenter);
-//            int radius = 10;//(int)(faceArray[i].height / 10 );
-//            Log.d(TAG, "Radius[" + String.valueOf(i) + "]" +  String.valueOf(radius));
-//            Imgproc.circle(col, center, radius, new Scalar(255, 0, 0, 255), -1);
+//            //https://hackprojects.wordpress.com/tutorials/opencv-python-tutorials/opencv-nose-detection-using-haar-cascades/
+//            mNoseDetector.detectMultiScale(faceGray, nose, 1.1, 2, 2,
+//                    new Size(mAbsoluteFaceSize, mAbsoluteFaceSize), new Size());
+//
+//            Rect[] nosesArray = nose.toArray();
+//            for (Rect n : nosesArray) {
+//
+//                //Point center = new Point(n.width , n.height );
+//                //Imgproc.rectangle(faceRgb, n.tl(), n.br(),new Scalar(255, 0, 0, 255), 4);
+//                Point center = new Point(n.x + n.width * 0.5 , n.y + n.height *0.36 );
+//
+//                //Radius set with trial & test method
+//                int radius = (int) (n.width * 0.25);
+//                Imgproc.circle(faceRgb, center, radius, new Scalar(255, 0, 0, 255), -1);
+//            }
 //        }
+
+
+        double xCenter,yCenter;
+        for (int i = 0; i < faceArray.length; i++) {
+            Imgproc.rectangle(col, faceArray[i].tl(), faceArray[i].br(),new Scalar(0, 0, 255, 0), 4);
+
+            xCenter = (faceArray[i].x + faceArray[i].x + faceArray[i].width) * 0.49;
+            yCenter = (faceArray[i].y + faceArray[i].y + faceArray[i].height) * 0.53;
+
+            Point center = new Point(xCenter, yCenter);
+            int radius = (int) faceArray[i].width / 10;
+            //Log.d(TAG, "Radius[" + String.valueOf(i) + "]" +  String.valueOf(radius));
+            Imgproc.circle(col, center, radius, new Scalar(255, 0, 0, 255), -1);
+        }
 
         //*********************************************************************************
         return col;
